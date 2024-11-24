@@ -51,10 +51,18 @@ public class PlayerData : MonoBehaviour
     private Coroutine hungerPenaltyCoroutine;
     private Coroutine thirstPenaltyCoroutine;
     private Coroutine smokePenaltyCoroutine;
+    private bool isDead = false;
+
+    public GameObject DeathScreen;
+    public GameObject bootLoader;
+
+    public bool touchingChicken = false;
+    public bool touchingFire = false;
+    public bool touchingChickenLeg = false;
 
     void Start()
     {
-        gameObject.transform.position = new Vector3(-3, 0, 0);
+        transform.position = new Vector3(-3, 0, 0);
 
         // Initialize player stats
         healthValue = maxHealth;
@@ -77,43 +85,61 @@ public class PlayerData : MonoBehaviour
 
         CheckPenalties();
 
-        if (healthValue <= 0)
+        if (healthValue <= 0 && !isDead)
         {
             Death();
         }
 
         // Chicken interaction logic
-        if (touchingChicken && Input.GetKey(KeyCode.E))
+        if (touchingChicken && Input.GetKeyDown(KeyCode.E))
         {
+            holdingChicken = true;
             chickenObject.SetActive(true);
-            holdingChicken = true; // Set to false when used in future logic
             pickUpChicken.Play();
-            holdingChicken = true; // later when I add campfire logic, set both false
         }
 
-        if (holdingChicken && touchingFire && Input.GetKey(KeyCode.E))
+        if (holdingChicken && touchingFire && Input.GetKeyDown(KeyCode.E))
         {
             holdingChicken = false;
             chickenObject.SetActive(false);
-            if (Input.GetKey(KeyCode.E))
-            {
-                holdingChicken = false;
-                chickenObject.SetActive(false);
-                cookChicken.Play();
-            }
+            cookChicken.Play();
         }
 
-        if (touchingChickenLeg && Input.GetKey(KeyCode.E))
+        if (touchingChickenLeg && Input.GetKeyDown(KeyCode.E))
         {
             hungerValue = Mathf.Min(maxHunger, hungerValue + 20); // Prevent exceeding max
-            eatChicken.Play() ;
+            eatChicken.Play();
         }
     }
 
     void Death()
     {
-        Debug.Log("Player has died!");
-        Time.timeScale = 0; // Freeze the game
+        isDead = true;
+
+        // Reset player stats
+        healthValue = maxHealth;
+        thirstValue = maxThirst;
+        hungerValue = maxHunger;
+        smokeValue = maxSmoke;
+
+        // Reset settings
+        smokeDecreaseInterval = 5f;
+        hungerHealthPenaltyRate = 2;
+
+        // Show death screen and handle reload
+        DeathScreen.SetActive(true);
+        StartCoroutine(HandleDeath());
+    }
+
+    IEnumerator HandleDeath()
+    {
+        // Wait for 3 seconds
+        yield return new WaitForSeconds(3f);
+
+        // Show boot loader and hide death screen
+        bootLoader.SetActive(true);
+        DeathScreen.SetActive(false);
+        isDead = false; // Allow for future deaths
     }
 
     void CheckPenalties()
@@ -152,7 +178,6 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Hunger coroutine
     IEnumerator DecreaseHunger()
     {
         while (true)
@@ -162,7 +187,6 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Thirst coroutine
     IEnumerator DecreaseThirst()
     {
         while (true)
@@ -172,7 +196,6 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Smoke coroutine
     IEnumerator DecreaseSmoke()
     {
         while (true)
@@ -182,7 +205,6 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Health penalty due to hunger
     IEnumerator DecreaseHealthFromHunger()
     {
         while (true)
@@ -192,7 +214,6 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Health penalty due to thirst
     IEnumerator DecreaseHealthFromThirst()
     {
         while (true)
@@ -202,7 +223,6 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Health penalty due to smoke
     IEnumerator DecreaseHealthFromSmoke()
     {
         while (true)
@@ -212,29 +232,13 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Update the health bar UI
-    void UpdateHealthBar()
-    {
-        UpdateBar(healthBarFill, healthValue, maxHealth);
-    }
+    void UpdateHealthBar() => UpdateBar(healthBarFill, healthValue, maxHealth);
 
-    // Update the hunger bar UI
-    void UpdateHungerBar()
-    {
-        UpdateBar(hungerBarFill, hungerValue, maxHunger);
-    }
+    void UpdateHungerBar() => UpdateBar(hungerBarFill, hungerValue, maxHunger);
 
-    // Update the thirst bar UI
-    void UpdateThirstBar()
-    {
-        UpdateBar(thirstBarFill, thirstValue, maxThirst);
-    }
+    void UpdateThirstBar() => UpdateBar(thirstBarFill, thirstValue, maxThirst);
 
-    // Update the smoke bar UI
-    void UpdateSmokeBar()
-    {
-        UpdateBar(smokeBarFill, smokeValue, maxSmoke);
-    }
+    void UpdateSmokeBar() => UpdateBar(smokeBarFill, smokeValue, maxSmoke);
 
     void UpdateBar(GameObject barFill, int currentValue, int maxValue)
     {
@@ -244,11 +248,7 @@ public class PlayerData : MonoBehaviour
         barRect.offsetMax = new Vector2(rightValue, barRect.offsetMax.y);
     }
 
-    public bool touchingChicken = false;
-    public bool touchingFire = false;
-    public bool touchingChickenLeg = false;
-
-    public void OnCollisionEnter2D(Collision2D collision)
+    void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("chicken"))
         {
@@ -257,7 +257,7 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    public void OnCollisionExit2D(Collision2D collision)
+    void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("chicken"))
         {
@@ -266,7 +266,7 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    public void OnTriggerEnter2D(Collider2D collision)
+    void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("fire"))
         {
@@ -280,7 +280,7 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    public void OnTriggerExit2D(Collider2D collision)
+    void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("fire"))
         {
