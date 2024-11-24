@@ -4,50 +4,54 @@ using UnityEngine;
 public class firescript : MonoBehaviour
 {
     public GameObject chickenObject; // The chicken object to display
-    public GameObject chickenLeg;    // The chicken leg object to display after 3 seconds
+    public GameObject chickenLeg;    // The chicken leg object to display after 5 seconds
     public PlayerData playerData;
     public GameObject eToInteract;
 
-    public bool touchingPlayer;
-
+    private bool touchingPlayer;
 
     private void Update()
     {
+        // Check for interaction
         if (touchingPlayer && Input.GetKeyDown(KeyCode.E) && playerData.holdingChicken)
         {
-            Debug.Log("player touched and hit e and has a chicken");
+            Debug.Log("Player interacted with fire and is holding a chicken.");
             chickenObject.SetActive(true); // Display the chicken object
-            StartCoroutine(GiveChickenLeg()); // Start coroutine to give chicken leg
-
-
-            if(playerData.holdingChicken && touchingPlayer)
-            {
-                eToInteract.SetActive(true);
-            }
+            StartCoroutine(GiveChickenLeg()); // Start coroutine to handle chicken leg
+            eToInteract.SetActive(false); // Hide interaction prompt
         }
     }
-    public void OnTriggerEnter2D(Collider2D collision)
+
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {
             touchingPlayer = true;
-
+            if (playerData.holdingChicken) eToInteract.SetActive(true); // Show interaction prompt
         }
     }
 
-    public void OnTriggerExit2D(Collider2D collision)
+    private void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {
             touchingPlayer = false;
+            eToInteract.SetActive(false); // Hide interaction prompt
         }
     }
-    IEnumerator GiveChickenLeg()
-    {
-        yield return new WaitForSeconds(5); // Wait for 3 seconds
 
-        // Switch the chicken object off and enable the chicken leg
-        chickenObject.SetActive(false);
-        chickenLeg.SetActive(true);
+    private IEnumerator GiveChickenLeg()
+    {
+        yield return new WaitForSeconds(5); // Wait for 5 seconds
+
+        // Check if the objects are still valid before modifying them
+        if (chickenObject != null)
+        {
+            chickenObject.SetActive(false);
+        }
+        if (chickenLeg != null)
+        {
+            chickenLeg.SetActive(true);
+        }
     }
 }

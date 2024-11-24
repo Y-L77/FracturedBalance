@@ -83,7 +83,7 @@ public class PlayerData : MonoBehaviour
         if(touchingChickenLeg && Input.GetKey(KeyCode.E))
         {
             //play sound
-            hungerValue += 30;
+            hungerValue += 20;
         }
 
     }
