@@ -14,6 +14,8 @@ public class ChickenScript : MonoBehaviour
     {
         startPosition = transform.position; // Store the chicken's starting position
         StartCoroutine(RandomMovement());
+
+        player = GameObject.FindGameObjectWithTag("Player");
     }
 
 

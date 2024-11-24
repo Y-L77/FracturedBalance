@@ -72,6 +72,20 @@ public class PlayerData : MonoBehaviour
             holdingChicken = true; //later when i add campfire logic under this set both false
         }
 
+        if(holdingChicken && touchingFire)
+        {
+            if(holdingChicken && touchingFire && Input.GetKey(KeyCode.E))
+            {
+                holdingChicken = false;
+                chickenObject.SetActive(false);
+            }
+        }
+        if(touchingChickenLeg && Input.GetKey(KeyCode.E))
+        {
+            //play sound
+            hungerValue += 30;
+        }
+
     }
 
     void Death()
@@ -197,4 +211,34 @@ public class PlayerData : MonoBehaviour
             eToInteract.SetActive(false);
         }
     }
+
+    public bool touchingFire = false;
+    public bool touchingChickenLeg = false;
+    public void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("fire"))
+        {
+            touchingFire = true;
+            eToInteract.SetActive(holdingChicken);
+        }
+
+        if (collision.gameObject.CompareTag("chickenleg"))
+        {
+            touchingChickenLeg = true;
+        }
+    }
+    public void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("fire"))
+        {
+            touchingFire = false;
+            eToInteract.SetActive(false);
+        }
+        if (collision.gameObject.CompareTag("chickenleg"))
+        {
+            touchingChickenLeg = false;
+        }
+    }
+
+
 }
