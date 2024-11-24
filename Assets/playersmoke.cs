@@ -7,12 +7,14 @@ public class playersmoke : MonoBehaviour
     public bool isTouchingPlayer;
     public GameObject cigarette;
     public PlayerData playerData;
+    public AudioSource smoking;
 
     private void Update()
     {
         if (isTouchingPlayer && Input.GetKeyDown(KeyCode.E))
         {
             StartCoroutine(SmokeCigarette()); // Fixed method invocation and syntax
+            smoking.Play();
         }
     }
 
