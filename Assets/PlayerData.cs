@@ -3,6 +3,10 @@ using UnityEngine;
 
 public class PlayerData : MonoBehaviour
 {
+    public bool holdingChicken;
+    public GameObject chickenObject;
+    public GameObject eToInteract;
+
     [Header("UI Settings")]
     public float maxRightSide = 3.4f; // Health bar's right value when full
     public float minRightSide = 300f; // Health bar's right value when empty
@@ -61,6 +65,13 @@ public class PlayerData : MonoBehaviour
         {
             Death();
         }
+
+        if(touchingChicken && Input.GetKey(KeyCode.E))
+        {
+            chickenObject.SetActive(true);
+            holdingChicken = true; //later when i add campfire logic under this set both false
+        }
+
     }
 
     void Death()
@@ -165,5 +176,25 @@ public class PlayerData : MonoBehaviour
         float rightValue = Mathf.Lerp(maxRightSide, minRightSide, thirstPercentage);
         RectTransform thirstBarRect = thirstBarFill.GetComponent<RectTransform>();
         thirstBarRect.offsetMax = new Vector2(rightValue, thirstBarRect.offsetMax.y);
+    }
+
+
+    public bool touchingChicken = false;
+
+    public void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("chicken"))
+        {
+            touchingChicken = true;
+            eToInteract.SetActive(true);
+        }
+    }
+    public void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("chicken"))
+        {
+            touchingChicken = false;
+            eToInteract.SetActive(false);
+        }
     }
 }
