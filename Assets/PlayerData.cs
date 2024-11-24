@@ -13,6 +13,7 @@ public class PlayerData : MonoBehaviour
     public GameObject healthBarFill;
     public GameObject hungerBarFill;
     public GameObject thirstBarFill;
+    public GameObject smokeBarFill;
 
     [Header("Player Stats")]
     public int healthValue;
@@ -24,6 +25,9 @@ public class PlayerData : MonoBehaviour
     public int thirstValue;
     public int maxThirst = 100;
 
+    public int smokeValue;
+    public int maxSmoke = 100;
+
     [Header("Hunger and Thirst Settings")]
     public float hungerDecreaseInterval = 3f;
     public int hungerDecreaseRate = 3;
@@ -31,24 +35,34 @@ public class PlayerData : MonoBehaviour
     public float thirstDecreaseInterval = 3f;
     public int thirstDecreaseRate = 1;
 
+    [Header("Smoke Settings")]
+    public float smokeDecreaseInterval = 4f;
+    public int smokeDecreaseRate = 2;
+
     [Header("Health Penalty Settings")]
     public float penaltyInterval = 2f;
     public int hungerHealthPenaltyRate = 2;
     public int thirstHealthPenaltyRate = 1;
+    public int smokeHealthPenaltyRate = 3;
 
     private bool isHungerAffectingHealth = false;
     private bool isThirstAffectingHealth = false;
+    private bool isSmokeAffectingHealth = false;
 
     void Start()
     {
+        gameObject.transform.position = new Vector3(-3, 0, 0);
+
         // Initialize player stats
         healthValue = maxHealth;
         hungerValue = maxHunger;
         thirstValue = maxThirst;
+        smokeValue = maxSmoke;
 
-        // Start hunger and thirst decrease coroutines
+        // Start coroutines
         StartCoroutine(DecreaseHunger());
         StartCoroutine(DecreaseThirst());
+        StartCoroutine(DecreaseSmoke());
     }
 
     void Update()
@@ -56,46 +70,45 @@ public class PlayerData : MonoBehaviour
         UpdateHealthBar();
         UpdateHungerBar();
         UpdateThirstBar();
+        UpdateSmokeBar();
 
         CheckHungerPenalty();
         CheckThirstPenalty();
+        CheckSmokePenalty();
 
-        // Trigger death if health drops to 0 or below
         if (healthValue <= 0)
         {
             Death();
         }
 
-        if(touchingChicken && Input.GetKey(KeyCode.E))
+        if (touchingChicken && Input.GetKey(KeyCode.E))
         {
             chickenObject.SetActive(true);
-            holdingChicken = true; //later when i add campfire logic under this set both false
+            holdingChicken = true; // later when I add campfire logic, set both false
         }
 
-        if(holdingChicken && touchingFire)
+        if (holdingChicken && touchingFire)
         {
-            if(holdingChicken && touchingFire && Input.GetKey(KeyCode.E))
+            if (Input.GetKey(KeyCode.E))
             {
                 holdingChicken = false;
                 chickenObject.SetActive(false);
             }
         }
-        if(touchingChickenLeg && Input.GetKey(KeyCode.E))
-        {
-            //play sound
-            hungerValue += 20;
-        }
 
+        if (touchingChickenLeg && Input.GetKey(KeyCode.E))
+        {
+            hungerValue = Mathf.Min(maxHunger, hungerValue + 20); // Prevent exceeding max
+        }
     }
 
     void Death()
     {
-        // Example: Stop the game and show a "Game Over" screen
         Debug.Log("Player has died!");
         Time.timeScale = 0; // Freeze the game
     }
 
-    // Check and handle health penalties for hunger
+    // Check health penalties for hunger
     void CheckHungerPenalty()
     {
         if (hungerValue <= 0 && !isHungerAffectingHealth)
@@ -110,7 +123,7 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Check and handle health penalties for thirst
+    // Check health penalties for thirst
     void CheckThirstPenalty()
     {
         if (thirstValue <= 0 && !isThirstAffectingHealth)
@@ -125,43 +138,78 @@ public class PlayerData : MonoBehaviour
         }
     }
 
-    // Coroutine to decrease hunger periodically
+    // Check health penalties for smoke
+    void CheckSmokePenalty()
+    {
+        if (smokeValue <= 0 && !isSmokeAffectingHealth)
+        {
+            StartCoroutine(DecreaseHealthFromSmoke());
+            isSmokeAffectingHealth = true;
+        }
+        else if (smokeValue > 0 && isSmokeAffectingHealth)
+        {
+            StopCoroutine(DecreaseHealthFromSmoke());
+            isSmokeAffectingHealth = false;
+        }
+    }
+
+    // Hunger coroutine
     IEnumerator DecreaseHunger()
     {
         while (true)
         {
             yield return new WaitForSeconds(hungerDecreaseInterval);
-            hungerValue = Mathf.Max(0, hungerValue - hungerDecreaseRate); // Prevent negative values
+            hungerValue = Mathf.Max(0, hungerValue - hungerDecreaseRate);
         }
     }
 
-    // Coroutine to decrease thirst periodically
+    // Thirst coroutine
     IEnumerator DecreaseThirst()
     {
         while (true)
         {
             yield return new WaitForSeconds(thirstDecreaseInterval);
-            thirstValue = Mathf.Max(0, thirstValue - thirstDecreaseRate); // Prevent negative values
+            thirstValue = Mathf.Max(0, thirstValue - thirstDecreaseRate);
         }
     }
 
-    // Coroutine for decreasing health due to hunger
+    // Smoke coroutine
+    IEnumerator DecreaseSmoke()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(smokeDecreaseInterval);
+            smokeValue = Mathf.Max(0, smokeValue - smokeDecreaseRate);
+        }
+    }
+
+    // Health penalty due to hunger
     IEnumerator DecreaseHealthFromHunger()
     {
         while (true)
         {
             yield return new WaitForSeconds(penaltyInterval);
-            healthValue = Mathf.Max(0, healthValue - hungerHealthPenaltyRate); // Prevent negative values
+            healthValue = Mathf.Max(0, healthValue - hungerHealthPenaltyRate);
         }
     }
 
-    // Coroutine for decreasing health due to thirst
+    // Health penalty due to thirst
     IEnumerator DecreaseHealthFromThirst()
     {
         while (true)
         {
             yield return new WaitForSeconds(penaltyInterval);
-            healthValue = Mathf.Max(0, healthValue - thirstHealthPenaltyRate); // Prevent negative values
+            healthValue = Mathf.Max(0, healthValue - thirstHealthPenaltyRate);
+        }
+    }
+
+    // Health penalty due to smoke
+    IEnumerator DecreaseHealthFromSmoke()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(penaltyInterval);
+            healthValue = Mathf.Max(0, healthValue - smokeHealthPenaltyRate);
         }
     }
 
@@ -192,6 +240,14 @@ public class PlayerData : MonoBehaviour
         thirstBarRect.offsetMax = new Vector2(rightValue, thirstBarRect.offsetMax.y);
     }
 
+    // Update the smoke bar UI
+    void UpdateSmokeBar()
+    {
+        float smokePercentage = (float)smokeValue / maxSmoke;
+        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, smokePercentage);
+        RectTransform smokeBarRect = smokeBarFill.GetComponent<RectTransform>();
+        smokeBarRect.offsetMax = new Vector2(rightValue, smokeBarRect.offsetMax.y);
+    }
 
     public bool touchingChicken = false;
 
@@ -203,6 +259,7 @@ public class PlayerData : MonoBehaviour
             eToInteract.SetActive(true);
         }
     }
+
     public void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("chicken"))
@@ -214,6 +271,7 @@ public class PlayerData : MonoBehaviour
 
     public bool touchingFire = false;
     public bool touchingChickenLeg = false;
+
     public void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("fire"))
@@ -227,6 +285,7 @@ public class PlayerData : MonoBehaviour
             touchingChickenLeg = true;
         }
     }
+
     public void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("fire"))
@@ -234,11 +293,10 @@ public class PlayerData : MonoBehaviour
             touchingFire = false;
             eToInteract.SetActive(false);
         }
+
         if (collision.gameObject.CompareTag("chickenleg"))
         {
             touchingChickenLeg = false;
         }
     }
-
-
 }

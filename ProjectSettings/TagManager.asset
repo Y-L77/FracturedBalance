@@ -7,6 +7,7 @@ TagManager:
   - chicken
   - fire
   - chickenleg
+  - smoke
   layers:
   - Default
   - TransparentFX
