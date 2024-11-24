@@ -1,17 +1,16 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerData : MonoBehaviour
 {
+    [Header("UI Settings")]
     public float maxRightSide = 3.4f; // Health bar's right value when full
     public float minRightSide = 300f; // Health bar's right value when empty
-
     public GameObject healthBarFill;
     public GameObject hungerBarFill;
     public GameObject thirstBarFill;
 
-
+    [Header("Player Stats")]
     public int healthValue;
     public int maxHealth = 100;
 
@@ -21,87 +20,150 @@ public class PlayerData : MonoBehaviour
     public int thirstValue;
     public int maxThirst = 100;
 
+    [Header("Hunger and Thirst Settings")]
+    public float hungerDecreaseInterval = 3f;
+    public int hungerDecreaseRate = 3;
+
+    public float thirstDecreaseInterval = 3f;
+    public int thirstDecreaseRate = 1;
+
+    [Header("Health Penalty Settings")]
+    public float penaltyInterval = 2f;
+    public int hungerHealthPenaltyRate = 2;
+    public int thirstHealthPenaltyRate = 1;
+
+    private bool isHungerAffectingHealth = false;
+    private bool isThirstAffectingHealth = false;
+
     void Start()
     {
-        healthValue = maxHealth; // Initialize health
+        // Initialize player stats
+        healthValue = maxHealth;
         hungerValue = maxHunger;
         thirstValue = maxThirst;
 
+        // Start hunger and thirst decrease coroutines
         StartCoroutine(DecreaseHunger());
         StartCoroutine(DecreaseThirst());
-
-
-
     }
 
     void Update()
     {
         UpdateHealthBar();
-        updateHungerBar();
-        updateThirstBar();
+        UpdateHungerBar();
+        UpdateThirstBar();
 
-        if (healthValue >= 0 || hungerValue >= 0 || thirstValue >= 0)
+        CheckHungerPenalty();
+        CheckThirstPenalty();
+
+        // Trigger death if health drops to 0 or below
+        if (healthValue <= 0)
         {
-            death();
+            Death();
         }
     }
 
-    void death()
+    void Death()
     {
-
+        // Example: Stop the game and show a "Game Over" screen
+        Debug.Log("Player has died!");
+        Time.timeScale = 0; // Freeze the game
     }
-    // Method to update the health bar UI
+
+    // Check and handle health penalties for hunger
+    void CheckHungerPenalty()
+    {
+        if (hungerValue <= 0 && !isHungerAffectingHealth)
+        {
+            StartCoroutine(DecreaseHealthFromHunger());
+            isHungerAffectingHealth = true;
+        }
+        else if (hungerValue > 0 && isHungerAffectingHealth)
+        {
+            StopCoroutine(DecreaseHealthFromHunger());
+            isHungerAffectingHealth = false;
+        }
+    }
+
+    // Check and handle health penalties for thirst
+    void CheckThirstPenalty()
+    {
+        if (thirstValue <= 0 && !isThirstAffectingHealth)
+        {
+            StartCoroutine(DecreaseHealthFromThirst());
+            isThirstAffectingHealth = true;
+        }
+        else if (thirstValue > 0 && isThirstAffectingHealth)
+        {
+            StopCoroutine(DecreaseHealthFromThirst());
+            isThirstAffectingHealth = false;
+        }
+    }
+
+    // Coroutine to decrease hunger periodically
+    IEnumerator DecreaseHunger()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(hungerDecreaseInterval);
+            hungerValue = Mathf.Max(0, hungerValue - hungerDecreaseRate); // Prevent negative values
+        }
+    }
+
+    // Coroutine to decrease thirst periodically
+    IEnumerator DecreaseThirst()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(thirstDecreaseInterval);
+            thirstValue = Mathf.Max(0, thirstValue - thirstDecreaseRate); // Prevent negative values
+        }
+    }
+
+    // Coroutine for decreasing health due to hunger
+    IEnumerator DecreaseHealthFromHunger()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(penaltyInterval);
+            healthValue = Mathf.Max(0, healthValue - hungerHealthPenaltyRate); // Prevent negative values
+        }
+    }
+
+    // Coroutine for decreasing health due to thirst
+    IEnumerator DecreaseHealthFromThirst()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(penaltyInterval);
+            healthValue = Mathf.Max(0, healthValue - thirstHealthPenaltyRate); // Prevent negative values
+        }
+    }
+
+    // Update the health bar UI
     void UpdateHealthBar()
     {
-        // Calculate the health percentage
         float healthPercentage = (float)healthValue / maxHealth;
-
-        // Map the health percentage to the right value (reverse logic)
         float rightValue = Mathf.Lerp(maxRightSide, minRightSide, healthPercentage);
-
-        // Update the health bar's right position
         RectTransform healthBarRect = healthBarFill.GetComponent<RectTransform>();
         healthBarRect.offsetMax = new Vector2(rightValue, healthBarRect.offsetMax.y);
     }
-    void updateHungerBar()
+
+    // Update the hunger bar UI
+    void UpdateHungerBar()
     {
         float hungerPercentage = (float)hungerValue / maxHunger;
         float rightValue = Mathf.Lerp(maxRightSide, minRightSide, hungerPercentage);
         RectTransform hungerBarRect = hungerBarFill.GetComponent<RectTransform>();
         hungerBarRect.offsetMax = new Vector2(rightValue, hungerBarRect.offsetMax.y);
-
     }
 
-    void updateThirstBar()
+    // Update the thirst bar UI
+    void UpdateThirstBar()
     {
-        float ThirstPercentage = (float)thirstValue / maxThirst;
-        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, ThirstPercentage);
+        float thirstPercentage = (float)thirstValue / maxThirst;
+        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, thirstPercentage);
         RectTransform thirstBarRect = thirstBarFill.GetComponent<RectTransform>();
         thirstBarRect.offsetMax = new Vector2(rightValue, thirstBarRect.offsetMax.y);
-    }
-
-
-    public float decreaseInterval = 3f;
-    public int hungerDecreaseRate = 3;
-    IEnumerator DecreaseHunger()
-    {
-        while(true) // Ensure hunger doesn't go below 0
-        {
-            yield return new WaitForSeconds(decreaseInterval); // Wait for the set interval
-            hungerValue -= hungerDecreaseRate; // Decrease hunger
-        }
-    }
-
-
-
-    public float decreaseIntervalThirst = 3f;
-    public int thirstDecreaseRate = 1;
-    IEnumerator DecreaseThirst()
-    {
-        while (true) // Ensure hunger doesn't go below 0
-        {
-            yield return new WaitForSeconds(decreaseIntervalThirst); // Wait for the set interval
-            thirstValue -= thirstDecreaseRate;
-        }
     }
 }
