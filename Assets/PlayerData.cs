@@ -45,9 +45,9 @@ public class PlayerData : MonoBehaviour
     public int thirstHealthPenaltyRate = 1;
     public int smokeHealthPenaltyRate = 3;
 
-    private bool isHungerAffectingHealth = false;
-    private bool isThirstAffectingHealth = false;
-    private bool isSmokeAffectingHealth = false;
+    private Coroutine hungerPenaltyCoroutine;
+    private Coroutine thirstPenaltyCoroutine;
+    private Coroutine smokePenaltyCoroutine;
 
     void Start()
     {
@@ -72,28 +72,24 @@ public class PlayerData : MonoBehaviour
         UpdateThirstBar();
         UpdateSmokeBar();
 
-        CheckHungerPenalty();
-        CheckThirstPenalty();
-        CheckSmokePenalty();
+        CheckPenalties();
 
         if (healthValue <= 0)
         {
             Death();
         }
 
+        // Chicken interaction logic
         if (touchingChicken && Input.GetKey(KeyCode.E))
         {
             chickenObject.SetActive(true);
-            holdingChicken = true; // later when I add campfire logic, set both false
+            holdingChicken = true; // Set to false when used in future logic
         }
 
-        if (holdingChicken && touchingFire)
+        if (holdingChicken && touchingFire && Input.GetKey(KeyCode.E))
         {
-            if (Input.GetKey(KeyCode.E))
-            {
-                holdingChicken = false;
-                chickenObject.SetActive(false);
-            }
+            holdingChicken = false;
+            chickenObject.SetActive(false);
         }
 
         if (touchingChickenLeg && Input.GetKey(KeyCode.E))
@@ -108,48 +104,39 @@ public class PlayerData : MonoBehaviour
         Time.timeScale = 0; // Freeze the game
     }
 
-    // Check health penalties for hunger
-    void CheckHungerPenalty()
+    void CheckPenalties()
     {
-        if (hungerValue <= 0 && !isHungerAffectingHealth)
+        // Hunger
+        if (hungerValue <= 0 && hungerPenaltyCoroutine == null)
         {
-            StartCoroutine(DecreaseHealthFromHunger());
-            isHungerAffectingHealth = true;
+            hungerPenaltyCoroutine = StartCoroutine(DecreaseHealthFromHunger());
         }
-        else if (hungerValue > 0 && isHungerAffectingHealth)
+        else if (hungerValue > 0 && hungerPenaltyCoroutine != null)
         {
-            StopCoroutine(DecreaseHealthFromHunger());
-            isHungerAffectingHealth = false;
+            StopCoroutine(hungerPenaltyCoroutine);
+            hungerPenaltyCoroutine = null;
         }
-    }
 
-    // Check health penalties for thirst
-    void CheckThirstPenalty()
-    {
-        if (thirstValue <= 0 && !isThirstAffectingHealth)
+        // Thirst
+        if (thirstValue <= 0 && thirstPenaltyCoroutine == null)
         {
-            StartCoroutine(DecreaseHealthFromThirst());
-            isThirstAffectingHealth = true;
+            thirstPenaltyCoroutine = StartCoroutine(DecreaseHealthFromThirst());
         }
-        else if (thirstValue > 0 && isThirstAffectingHealth)
+        else if (thirstValue > 0 && thirstPenaltyCoroutine != null)
         {
-            StopCoroutine(DecreaseHealthFromThirst());
-            isThirstAffectingHealth = false;
+            StopCoroutine(thirstPenaltyCoroutine);
+            thirstPenaltyCoroutine = null;
         }
-    }
 
-    // Check health penalties for smoke
-    void CheckSmokePenalty()
-    {
-        if (smokeValue <= 0 && !isSmokeAffectingHealth)
+        // Smoke
+        if (smokeValue <= 0 && smokePenaltyCoroutine == null)
         {
-            StartCoroutine(DecreaseHealthFromSmoke());
-            isSmokeAffectingHealth = true;
+            smokePenaltyCoroutine = StartCoroutine(DecreaseHealthFromSmoke());
         }
-        else if (smokeValue > 0 && isSmokeAffectingHealth)
+        else if (smokeValue > 0 && smokePenaltyCoroutine != null)
         {
-            StopCoroutine(DecreaseHealthFromSmoke());
-            isSmokeAffectingHealth = false;
+            StopCoroutine(smokePenaltyCoroutine);
+            smokePenaltyCoroutine = null;
         }
     }
 
@@ -216,40 +203,38 @@ public class PlayerData : MonoBehaviour
     // Update the health bar UI
     void UpdateHealthBar()
     {
-        float healthPercentage = (float)healthValue / maxHealth;
-        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, healthPercentage);
-        RectTransform healthBarRect = healthBarFill.GetComponent<RectTransform>();
-        healthBarRect.offsetMax = new Vector2(rightValue, healthBarRect.offsetMax.y);
+        UpdateBar(healthBarFill, healthValue, maxHealth);
     }
 
     // Update the hunger bar UI
     void UpdateHungerBar()
     {
-        float hungerPercentage = (float)hungerValue / maxHunger;
-        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, hungerPercentage);
-        RectTransform hungerBarRect = hungerBarFill.GetComponent<RectTransform>();
-        hungerBarRect.offsetMax = new Vector2(rightValue, hungerBarRect.offsetMax.y);
+        UpdateBar(hungerBarFill, hungerValue, maxHunger);
     }
 
     // Update the thirst bar UI
     void UpdateThirstBar()
     {
-        float thirstPercentage = (float)thirstValue / maxThirst;
-        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, thirstPercentage);
-        RectTransform thirstBarRect = thirstBarFill.GetComponent<RectTransform>();
-        thirstBarRect.offsetMax = new Vector2(rightValue, thirstBarRect.offsetMax.y);
+        UpdateBar(thirstBarFill, thirstValue, maxThirst);
     }
 
     // Update the smoke bar UI
     void UpdateSmokeBar()
     {
-        float smokePercentage = (float)smokeValue / maxSmoke;
-        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, smokePercentage);
-        RectTransform smokeBarRect = smokeBarFill.GetComponent<RectTransform>();
-        smokeBarRect.offsetMax = new Vector2(rightValue, smokeBarRect.offsetMax.y);
+        UpdateBar(smokeBarFill, smokeValue, maxSmoke);
+    }
+
+    void UpdateBar(GameObject barFill, int currentValue, int maxValue)
+    {
+        float percentage = (float)currentValue / maxValue;
+        float rightValue = Mathf.Lerp(maxRightSide, minRightSide, percentage);
+        RectTransform barRect = barFill.GetComponent<RectTransform>();
+        barRect.offsetMax = new Vector2(rightValue, barRect.offsetMax.y);
     }
 
     public bool touchingChicken = false;
+    public bool touchingFire = false;
+    public bool touchingChickenLeg = false;
 
     public void OnCollisionEnter2D(Collision2D collision)
     {
@@ -268,9 +253,6 @@ public class PlayerData : MonoBehaviour
             eToInteract.SetActive(false);
         }
     }
-
-    public bool touchingFire = false;
-    public bool touchingChickenLeg = false;
 
     public void OnTriggerEnter2D(Collider2D collision)
     {
