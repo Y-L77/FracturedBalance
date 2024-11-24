@@ -6,6 +6,7 @@ public class wellScript : MonoBehaviour
     public bool touchingPlayer;
     public GameObject pressEtoInteractWithWell;
     public PlayerData playerData;
+    public AudioSource drinkWater;
 
     private bool isRefilling = false;
 
@@ -29,6 +30,7 @@ public class wellScript : MonoBehaviour
         while (touchingPlayer && Input.GetKey(KeyCode.E))
         {
             playerData.thirstValue += 3; // Increase thirst value by 4
+            drinkWater.Play();
             yield return new WaitForSeconds(1f); // Wait 1 second
         }
         isRefilling = false;

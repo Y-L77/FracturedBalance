@@ -10,6 +10,7 @@ public class BootloaderLogic : MonoBehaviour
     public GameObject hungerbar;
     public GameObject veryhungerbar;
     public Button SmokeAddiction;
+    public AudioSource pressButton;
 
     private void Start()
     {
@@ -40,6 +41,7 @@ public class BootloaderLogic : MonoBehaviour
         hungerbar.SetActive(true);
         playerData.hungerHealthPenaltyRate = 2;
         Bootloader.SetActive(false);
+        pressButton.Play();
     }
 
     private void StartNoAddiction()
@@ -53,6 +55,7 @@ public class BootloaderLogic : MonoBehaviour
         hungerbar.SetActive(true);
         playerData.hungerHealthPenaltyRate = 2;
         Bootloader.SetActive(false);
+        pressButton.Play();
     }
     private void StartFoodAddiction()
     {
@@ -66,5 +69,6 @@ public class BootloaderLogic : MonoBehaviour
         veryhungerbar.SetActive(true);
         hungerbar.SetActive(false);
         Bootloader.SetActive(false);
+        pressButton.Play();
     }
 }

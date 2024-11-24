@@ -6,6 +6,9 @@ public class PlayerData : MonoBehaviour
     public bool holdingChicken;
     public GameObject chickenObject;
     public GameObject eToInteract;
+    public AudioSource pickUpChicken;
+    public AudioSource cookChicken;
+    public AudioSource eatChicken;
 
     [Header("UI Settings")]
     public float maxRightSide = 3.4f; // Health bar's right value when full
@@ -84,6 +87,7 @@ public class PlayerData : MonoBehaviour
         if (touchingChicken && Input.GetKey(KeyCode.E))
         {
             chickenObject.SetActive(true);
+            pickUpChicken.Play();
             holdingChicken = true; // later when I add campfire logic, set both false
         }
 
@@ -93,12 +97,14 @@ public class PlayerData : MonoBehaviour
             {
                 holdingChicken = false;
                 chickenObject.SetActive(false);
+                cookChicken.Play();
             }
         }
 
         if (touchingChickenLeg && Input.GetKey(KeyCode.E))
         {
             hungerValue = Mathf.Min(maxHunger, hungerValue + 20); // Prevent exceeding max
+            eatChicken.Play() ;
         }
     }
 
